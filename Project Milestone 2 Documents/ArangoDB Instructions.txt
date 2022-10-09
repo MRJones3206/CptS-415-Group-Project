@@ -1,0 +1,87 @@
+Navigate to https://www.arangodb.com/download-major/windows/ (Or otherwise, if non-Windows OS)
+Download the Server 3.10.0 package (The name is confusing, this is both the server AND client)
+Run the installer. When prompted, I provided the password '123' for my root user, just to make it easier.
+
+Once the system has spun up, you will be given access to a web interface on 127.0.0.1:8529 At this point
+you are free to experiment, but this is only the database, not the python drivers.
+
+While you are on the web interface, create a database labeled 'test', under the root user.
+
+At this point you should also have access to two different shortcuts, in addition to your installation program.
+They do... exactly what they say they do. The Arango Shell is the CLI tool for the Arango DB, and the 'Arango
+Management Interface' opens and runs the web interface that you should have had opened already by the executable.
+
+---
+
+If you don't have it already, get Python and pip on your computer of choice.
+Run 'pip install python-arango --upgrade on your CLI'
+That installs our selected driver, located here: https://github.com/ArangoDB-Community/python-arango
+
+
+Once your package has been built, and you have created the 'test' database, you should now be able to copy the
+following code into a python file and run it. If your database name or password are different than shown here,
+remember to change them before running.
+
+I just stole this from the driver's getting started page. With a few tweaks, it will run perfectly fine.
+
+#######################################################
+
+from arango import ArangoClient
+
+# Initialize the client for ArangoDB.
+client = ArangoClient(hosts="http://localhost:8529")
+
+# Connect to "test" database as root user.
+db = client.db("test", username="root", password="123")
+
+# Create a new graph named "school".
+graph = db.create_graph("school")
+
+# Create vertex collections for the graph.
+students = graph.create_vertex_collection("students")
+lectures = graph.create_vertex_collection("lectures")
+
+# Create an edge definition (relation) for the graph.
+edges = graph.create_edge_definition(
+    edge_collection="register",
+    from_vertex_collections=["students"],
+    to_vertex_collections=["lectures"]
+)
+
+# Insert vertex documents into "students" (from) vertex collection.
+students.insert({"_key": "01", "full_name": "Anna Smith"})
+students.insert({"_key": "02", "full_name": "Jake Clark"})
+students.insert({"_key": "03", "full_name": "Lisa Jones"})
+
+# Insert vertex documents into "lectures" (to) vertex collection.
+lectures.insert({"_key": "MAT101", "title": "Calculus"})
+lectures.insert({"_key": "STA101", "title": "Statistics"})
+lectures.insert({"_key": "CSC101", "title": "Algorithms"})
+
+# Insert edge documents into "register" edge collection.
+edges.insert({"_from": "students/01", "_to": "lectures/MAT101"})
+edges.insert({"_from": "students/01", "_to": "lectures/STA101"})
+edges.insert({"_from": "students/01", "_to": "lectures/CSC101"})
+edges.insert({"_from": "students/02", "_to": "lectures/MAT101"})
+edges.insert({"_from": "students/02", "_to": "lectures/STA101"})
+edges.insert({"_from": "students/03", "_to": "lectures/CSC101"})
+
+# Traverse the graph in outbound direction, breadth-first.
+result = graph.traverse(
+    start_vertex="students/01",
+    direction="outbound",
+    strategy="breadthfirst"
+)
+
+print(result)
+
+###############################################################
+
+If you ran this already and want to run it again, you can't re-create the database or graph without Arango complaining, instead
+initialize and connect the client as normal, then just request a link to the graph you already created by entering
+
+<variable> = db.graph("school")
+You can then run the various graph operations on <variable>
+
+Hope this helps!
+- Matthew
