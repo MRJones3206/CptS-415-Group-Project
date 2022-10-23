@@ -28,6 +28,10 @@ pip install -e . -r requirements.txt
 
 ## Running the tool
 
+``` bash
+
 youtubeIngest scrape-yt -path "/Users/derekolson/Documents"
 
 youtubeIngest decompress-yt -path "/Users/derekolson/Documents"
+
+```
