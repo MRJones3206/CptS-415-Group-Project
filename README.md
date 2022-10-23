@@ -28,4 +28,4 @@ pip install -e . -r requirements.txt
 
 ## Running the tool
 
-youtubeIngest scrape-yt -path "all -insert
+youtubeIngest scrape-yt -path "/Users/derekolson/Documents"
