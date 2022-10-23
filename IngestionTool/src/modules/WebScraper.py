@@ -7,4 +7,5 @@ class WebScraper:
 
     def scrape(self):
         print(f"{bcolors.INFO} [Info] >\t{bcolors.ENDC}{bcolors.OKGREEN}Starting webscrape{bcolors.ENDC}")
+        
 
