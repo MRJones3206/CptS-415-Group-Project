@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 from modules.WebScraper import WebScraper
 from modules.ConsoleColors import bcolors
+from modules.DecompZips import DecompZips
 
 @click.group()
 def cli():
@@ -79,7 +80,13 @@ def decompress_yt(path):
             raise NotADirectoryError
 
         dir = dir / "YoutubeAnalyzerData"
+        
+        if(not dir.exists()):
+            raise NotADirectoryError
+        
         print(f"{bcolors.INFO} [INFO] >\t{bcolors.ENDC}{bcolors.OKGREEN}Extracting all zip files in {dir}{bcolors.ENDC}")
+        dz = DecompZips(dir)
+        dz.decompose()
     
     except NotADirectoryError:
         print(f"{bcolors.FAIL}This filepath does not exist.{bcolors.ENDC}")

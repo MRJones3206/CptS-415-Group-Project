@@ -27,7 +27,7 @@ class WebScraper:
                 inner_tables = td.findChildren('table', recursive=False)
                 for table in inner_tables:
                     i+=1
-                    table_name_prefix = f"Table_{i}_"
+                    table_name_prefix = f"Table{i}"
                     rows = table.findChildren('tr', recursive=False) 
                     for row in rows:
                         cells = row.findChildren("td", recursive=False)
