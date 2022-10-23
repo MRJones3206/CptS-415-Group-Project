@@ -38,7 +38,6 @@ def main():
     for line in file:
         line = line.split()
         #If videos has the key don't insert, else insert
-        #if not videos.has({"_key": str(key)}):
         if len(line) > 3 and not videos.has(line[0]):
             videos.insert({"videoID": line[0],
             "uploader": line[1],
