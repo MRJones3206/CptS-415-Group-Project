@@ -1,6 +1,7 @@
 from arango import ArangoClient
 import sys
 import time
+    
 
 def main():
 
@@ -10,7 +11,7 @@ def main():
     # Connect to "test" database as root user.
     db = client.db("test", username="root", password="123")
 
-    #Delete graph so you reset the values
+    #Delete graph so you reset the values in it
     db.delete_graph("youtube")
 
     #If graph exists, connect to it, otherwise create it
@@ -24,22 +25,25 @@ def main():
     # if graph.has_vertex_collection("videos"): 
     #     videos = graph.vertex_collection("videos")
     # else:
-    #Create vertex
-    videos = graph.create_vertex_collection("videos")
 
+    #Create necessary vertices
+    videos = graph.create_vertex_collection("videos")
+    relatedVideos = graph.create_vertex_collection("relatedVideos")
 
     #Create an edge definition (relation) for the graph.
-    # edges = graph.create_edge_definition(
-    #     edge_collection="register",
-    #     from_vertex_collections=["videos"],
-    #     to_vertex_collections=["relatedVideos"]
-    # )
+    edges = graph.create_edge_definition(
+        edge_collection="related",
+        from_vertex_collections=["videos"],
+        to_vertex_collections=["relatedVideos"]
+    )
+
     file = open(sys.argv[1], "r")
     for line in file:
+        #Traverse each line
         line = line.split()
-        #If videos has the key don't insert, else insert
+        #If the ID is unique, insert it.
         if len(line) > 3 and not videos.has(line[0]):
-            videos.insert({"videoID": line[0],
+            videos.insert({"_key": line[0],
             "uploader": line[1],
             "age": line[2],
             "category": line[3],
@@ -47,21 +51,20 @@ def main():
             "views": line[5],
             "rate": line[6],
             "ratings": line[7],
-            "comments": line[8],
-        # "related IDs ": line[9],
-        })
+            "comments": line[8]
+            })
 
-    # inser edges from vides to related videos?.
-    # edges.insert({"_from": "students/01", "_to": "lectures/MAT101"})
-    # edges.insert({"_from": "students/01", "_to": "lectures/STA101"})
-    # edges.insert({"_from": "students/01", "_to": "lectures/CSC101"})
-    # edges.insert({"_from": "students/02", "_to": "lectures/MAT101"})
-    # edges.insert({"_from": "students/02", "_to": "lectures/STA101"})
-    # edges.insert({"_from": "students/03", "_to": "lectures/CSC101"})
+            #Traverse each related video for a line
+            for related in range (9, len(line)):
+                #If the ID is unique, insert it.
+                if not relatedVideos.has(line[related]):
+                    relatedVideos.insert({'_key':line[related]})
+                #Create the edge between main video, and current related video    
+                edges.insert({"_from": "videos/" + line[0] , "_to": "relatedVideos/" + line[related]})
 
     # Traverse the graph in outbound direction, breadth-first.
     # result = graph.traverse(
-    #     start_vertex="students/01",
+    #     start_vertex="videos/LKh7zAJ4nwo",
     #     direction="outbound",
     #     strategy="breadthfirst"
     # )
