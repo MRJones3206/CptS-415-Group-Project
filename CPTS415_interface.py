@@ -140,7 +140,7 @@ def search_range(category, lowRange, highRange):
 
 def main():
 	#If no argument was specified, print the error to the user.
-	if len(sys.argv) <= 1: print("Needed argument is 'top' or 'range'.")
+	if len(sys.argv) <= 1: print("Needed argument is 'parse' or 'search'.")
 
 	#If the first agument is search, provide second argument of top or range and execute search
 	elif sys.argv[1] == "search":
