@@ -173,3 +173,5 @@ t_bar_inner = DECORATOR(1700, 52, 14, 14, color=(220,220,220), priority=2)
 t_bar_title = FONT_OBJECT(32, 32, (220,220,220), (0,0,0), 3, None, 32, "Welcome to the Clueless Idiots' Graphical User Interface", False)
 title_bar = [t_bar_outer, t_bar_inner, t_bar_title]
 
+# Background Rect Frame Elements.
+
