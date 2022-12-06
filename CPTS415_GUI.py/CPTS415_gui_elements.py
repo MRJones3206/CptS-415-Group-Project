@@ -27,6 +27,7 @@ class GUI:
 		# Display Building Goes Here...
 
 		self.draw_queue.append(bkg)
+		self.draw_queue += title_bar
 
 	def draw(self):
 		if self.draw_queue_markdirty:
@@ -102,7 +103,9 @@ class INTERACTABLE:
 
 class FONT_OBJECT:
 	def __init__(self, x_pos = 0, y_pos = 0, bkgcolor = (0, 0, 0), color = (255, 0, 0), priority = 1, fontname = None, fontsize = 16, textstring = "no text here", no_parse = False):
-		self.font = pygame.font.Font(fontname, fontsize)
+		if not pygame.font.get_init():
+			pygame.font.init()
+		self.font = pygame.font.SysFont(fontname, fontsize)
 		self.x_pos = x_pos
 		self.y_pos = y_pos
 		self.color = color
@@ -165,6 +168,8 @@ class FONT_OBJECT:
 # Make a basic background (1728 x 972)
 bkg = BACKGROUND()
 # Title Bar Box Elements
-t_bar_outer = DECORATOR(x_size, )
-title_bar = []
+t_bar_outer = DECORATOR(1708, 60, 10, 10, color=(128,128,128), priority=1)
+t_bar_inner = DECORATOR(1700, 52, 14, 14, color=(220,220,220), priority=2)
+t_bar_title = FONT_OBJECT(32, 32, (220,220,220), (0,0,0), 3, None, 32, "Welcome to the Clueless Idiots' Graphical User Interface", False)
+title_bar = [t_bar_outer, t_bar_inner, t_bar_title]
 
