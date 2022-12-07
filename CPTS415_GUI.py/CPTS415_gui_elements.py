@@ -41,12 +41,17 @@ class GUI:
 
 		# Display Building Goes Here...
 
+		# Drawables
 		self.draw_queue.append(bkg)
 		self.draw_queue += title_bar
 		self.draw_queue += button_framing
 		self.draw_queue += buttons
+		self.draw_queue.append(node_container)
 
+		# Hoverables
 		self.hover_queue += buttons
+		self.hover_queue.append(node_container)
+		self.hover_queue += tooltips
 
 	def draw(self):
 		if self.draw_queue_markdirty:
@@ -80,6 +85,29 @@ class DECORATOR:
 	def draw(self, target):
 		target.blit(self.surface, self.rect)
 
+# A basic hoverable object. Invisible and never rendered, but can be used to detect mouse hovering.
+# Will always be overwritten by other hoverable objects. Used to display tooltips for UI bits made with decorators.
+class HOVER_OBJECT:
+	def __init__ (self, x_size = 100, y_size = 100, x_pos = 100, y_pos = 100, tooltip = None):
+		self.x_pos = x_pos
+		self.y_pos = y_pos
+		self.x_size = x_size
+		self.y_size = y_size
+		self.priority = -1
+		self.tooltip = tooltip
+
+	def on_hover(self, target):
+		self.tooltip.draw(target)
+
+	def on_un_hover(self, target):
+		pass
+
+	def mouse_is_in(self):
+		mousepos = pygame.mouse.get_pos()
+		xcheck = self.x_pos <= mousepos[0] and self.x_pos + self.x_size >= mousepos[0]
+		ycheck = self.y_pos <= mousepos[1] and self.y_pos + self.y_size >= mousepos[1]
+		return xcheck and ycheck
+
 # Special decorator used to color the background of the screen. Always the lowest possible priority (aka -1)
 # No need for ID's - you should only ever use one background anyway.
 class BACKGROUND:
@@ -97,8 +125,8 @@ class INTERACTABLE:
 		self.color = color
 		self.surface.fill(color)
 		self.rect = self.surface.get_rect()
-		self.rect[0] = x_pos
-		self.rect[1] = y_pos
+		self.x_pos = x_pos
+		self.y_pos = y_pos
 		self.priority = priority
 		self.on_hover_def = on_hover
 		self.on_click_def = on_click
@@ -119,12 +147,12 @@ class INTERACTABLE:
 
 	def mouse_is_in(self):
 		mousepos = pygame.mouse.get_pos()
-		xcheck = self.rect[0] <= mousepos[0] and self.rect[0] + self.surface.get_size[0] >= mousepos[0]
-		ycheck = self.rect[1] <= mousepos[1] and self.rect[1] + self.surface.get_size[1] >= mousepos[1]
+		xcheck = self.x_pos <= mousepos[0] and self.x_pos + self.surface.get_size()[0] >= mousepos[0]
+		ycheck = self.y_pos <= mousepos[1] and self.y_pos + self.surface.get_size()[1] >= mousepos[1]
 		return xcheck and ycheck
 
 class FONT_OBJECT:
-	def __init__(self, x_pos = 0, y_pos = 0, bkgcolor = (0, 0, 0), color = (255, 0, 0), priority = 1, fontname = None, fontsize = 16, textstring = "no text here", no_parse = False, id = 0):
+	def __init__(self, x_pos = 0, y_pos = 0, bkgcolor = (0, 0, 0), color = (255, 0, 0), priority = 1, fontname = None, fontsize = 16, textstring = "no text here", no_parse = False, id = 0, force_linecount = -1):
 		if not pygame.font.get_init():
 			pygame.font.init()
 		self.font = pygame.font.SysFont(fontname, fontsize)
@@ -153,23 +181,36 @@ class FONT_OBJECT:
 			renderbases = []
 			xmax = 0
 			ytotal = 0
+			linecount = force_linecount
 			for string in formatstrings:
-				# Fix an inconsistency with rendering - if we have '\n\n' we want visual space, but font.render reads the resulting string
-				# '' as an empty string and instead returns a zero-height surface, which we don't want.
-				if len(string) == 0:
+				if linecount != 0:
+					# Fix an inconsistency with rendering - if we have '\n\n' we want visual space, but font.render reads the resulting string
+					# '' as an empty string and instead returns a zero-height surface, which we don't want.
+					if len(string) == 0:
+						fontobj = self.font.render(' ', True, self.color)
+						renderbases.append((fontobj, ytotal))
+						fontrect = fontobj.get_rect()
+						if fontrect[2] > xmax:
+							xmax = fontrect[2]
+						ytotal += fontrect[3]
+					else:
+						fontobj = self.font.render(string, True, self.color)
+						renderbases.append((fontobj, ytotal))
+						fontrect = fontobj.get_rect()
+						if fontrect[2] > xmax:
+							xmax = fontrect[2]
+						ytotal += fontrect[3]
+					linecount -= 1
+				# Enforce strict line count, if specified. Will pass through if linecount is met or unlimited.
+				while linecount > 0:
 					fontobj = self.font.render(' ', True, self.color)
 					renderbases.append((fontobj, ytotal))
 					fontrect = fontobj.get_rect()
 					if fontrect[2] > xmax:
 						xmax = fontrect[2]
 					ytotal += fontrect[3]
-				else:
-					fontobj = self.font.render(string, True, self.color)
-					renderbases.append((fontobj, ytotal))
-					fontrect = fontobj.get_rect()
-					if fontrect[2] > xmax:
-						xmax = fontrect[2]
-					ytotal += fontrect[3]
+					linecount -= 1
+			# Build the surface
 			surf = pygame.Surface((xmax, ytotal))
 			surf.fill(bkgcolor)
 			for render in renderbases:
@@ -254,8 +295,129 @@ class TOOLTIP:
 	
 	def draw(self, target):
 		target.blit(self.surface, (1134, 566))
-### Building the GUI ###
 
+# Container class for the display of NODE's
+# Actually a more complicated primitive, since it has its own unique priority value, but is has some slightly complicated bits
+# that makes it special. Interactivity for on_hover is overloaded here to enable hover-scrolling.
+class NODE_CONTAINER:
+	def __init__(self):
+		# Handle the setup of the container framework (the scrollups and scrolldowns)
+		self.top_interactable = INTERACTABLE(692, 40, 424, 90, (180, 180, 180), 100, self.bumpup, just_pass, just_pass, -1)
+		self.btm_interactable = INTERACTABLE(692, 40, 424, 918, (180, 180, 180), 100, self.bumpdown, just_pass, just_pass, -1)
+		self.surf_composite = pygame.Surface((692, 864))
+		self.surf_composite.fill((220,220,220))
+		self.surf_composite.blit(self.top_interactable.surface, (0, 0))
+		self.surf_composite.blit(self.btm_interactable.surface, (0, 824))
+		self.x_pos = 424
+		self.y_pos = 90
+		self.x_size = 692
+		self.y_size = 864
+		self.rect = self.surf_composite.get_rect()
+		self.has_contents = False
+		self.contents_summary = []
+		self.contents_detail = []
+		self.contents_yoffset = 0
+		self.contents_count = 0
+		self.contents_surface = None
+		self.tooltip_scrollbars = TOOLTIP(tooltip="Hover on these to scroll up and down large node lists.\n\nYou will, obviously, need a node list to do this.\nNodes are displayed with only a summary of their data, you\ncan hover over them to see more details, if relevant.")
+		self.tooltip_display = TOOLTIP(tooltip="Once a query is executed, nodes matching that query\nwill show up here. Use the grey bars above and below to\nscroll through the results. Hover over them to see\nadditional data, if any.")
+		self.tooltip_node_hover = TOOLTIP(tooltip="It's a node. Some more information might be shown in the data menu above.")
+	def bumpup(self):
+		if self.contents_yoffset > 0:
+			self.contents_yoffset -= 6
+	def bumpdown(self):
+		if self.contents_yoffset <= 70*self.contents_count - 784 - 4*self.contents_count:
+			self.contents_yoffset += 6
+
+	def draw(self, target):
+		# No contents? No problem, just render the frame.
+		if not self.has_contents:
+			target.blit(self.surf_composite, (424, 94))
+		else:
+			target.blit(self.contents_surface, (428, 134), (0, self.contents_yoffset, 684, self.contents_yoffset + 784))
+			target.blit(self.top_interactable.surface, (424, 94))
+			target.blit(self.btm_interactable.surface, (424, 918))
+
+			# A hacky fix to some collision issues, but I can't figure out why they are happening...
+			surf_fix_1 = pygame.Surface((692, 4))
+			surf_fix_1.fill((128,128,128))
+			surf_fix_2 = pygame.Surface((692, 10))
+			surf_fix_2.fill((220,220,220))
+			target.blit(surf_fix_1, (424, 958))
+			target.blit(surf_fix_2, (424, 962))
+
+	def on_click(self):
+		pass
+
+	def on_hover(self, target):
+		if self.top_interactable.mouse_is_in():
+			self.bumpup()
+			self.tooltip_scrollbars.draw(target)
+		if self.btm_interactable.mouse_is_in():
+			self.bumpdown()
+			self.tooltip_scrollbars.draw(target)
+		if self.has_contents:
+			mouseposy_onsurf = pygame.mouse.get_pos()[1] - 134
+			entry_guess = (int)((self.contents_yoffset + mouseposy_onsurf)/(66))
+			if entry_guess < self.contents_count and mouseposy_onsurf > 0:
+				target.blit(self.contents_detail[entry_guess], (1138, 94))
+				self.tooltip_node_hover.draw(target)
+			
+		if not (self.top_interactable.mouse_is_in() or self.btm_interactable.mouse_is_in() or self.has_contents):
+			self.tooltip_display.draw(target)
+
+	def on_un_hover(self, target):
+		pass
+
+	def mouse_is_in(self):
+		mousepos = pygame.mouse.get_pos()
+		xcheck = self.x_pos <= mousepos[0] and self.x_pos + self.x_size >= mousepos[0]
+		ycheck = self.y_pos <= mousepos[1] and self.y_pos + self.y_size >= mousepos[1]
+		return xcheck and ycheck
+	
+	def clear(self):
+		self.has_contents = False
+		self.contents_summary = []
+		self.contents_detail = []
+
+	def populate_content(self, stringlist, stringlist_summary):
+		fontobjsummarylist = []
+		fontobjdetaillist = []
+		if len(stringlist) != len(stringlist_summary):
+			print("Can't work with a node list and a node summary list of differing lengths!")
+			return
+		for k in range(len(stringlist)):
+			string = stringlist[k]
+			summary = stringlist_summary[k]
+			# Build the summary objects
+			fontobj = FONT_OBJECT(0,0,(220,220,220), (0,0,0), -1, None, 18, summary, False, -1, 3).renderobj
+			base_template = DECORATOR(684, 70, 0, 0, (128,128,128), -1, -1).surface
+			deco_inner = DECORATOR(676, 62, 0, 0, (220,220,220), -1, -1).surface
+			base_template.blit(deco_inner, (4,4))
+			base_template.blit(fontobj, (8, 8))
+			fontobjsummarylist.append(base_template)
+
+			# Build the detail objects.
+			detail_fontobj = FONT_OBJECT(0,0,(220,220,220), (0,0,0), -1, None, 18, string, False, -1).renderobj
+			detail_base_template = DECORATOR(572,448,1134,94,(220,220,220), -1, -1).surface
+			detail_base_template.blit(detail_fontobj, (4,4))
+			fontobjdetaillist.append(detail_base_template)
+
+		# Build the visual representation of the summaries.
+		summary_surface = pygame.Surface((684, (len(fontobjsummarylist)*70) + 4))
+		summary_surface.fill((220,220,220))
+		for i in range(len(fontobjsummarylist)):
+			summary_surface.blit(fontobjsummarylist[i], (0, 66*i))
+
+		self.contents_count = len(fontobjsummarylist)
+		self.contents_detail = fontobjdetaillist
+		self.contents_summary = fontobjsummarylist
+		self.contents_surface = summary_surface
+		self.contents_yoffset = 0
+		self.has_contents = True
+			
+
+### Building the GUI ###
 
 # DECORATOR (self, x_size = 100, y_size = 100, x_pos = 0, y_pos = 0, color = (255, 255, 255), priority = 0):
 # FONT OBJECT (self, x_pos = 0, y_pos = 0, bkgcolor = (0, 0, 0), color = (255, 0, 0), priority = 1, fontname = None, fontsize = 16, textstring = "no text here", no_parse = False):
@@ -277,9 +439,11 @@ bgr_left_inner = DECORATOR(392, 864, 14, 94, color=(220,220,220), priority=2, id
 bgr_center_outer = DECORATOR(700, 872, 420, 90, color=(128,128,128), priority=1, id=5)
 bgr_center_inner = DECORATOR(692, 864, 424, 94, color=(220,220,220), priority=2, id=6)
 
+# the one on the bottom
 bgr_right_contextmenu_outer = DECORATOR(588, 400, 1130, 562, color=(128,128,128), priority=1, id=7)
 bgr_right_contextmenu_inner = DECORATOR(580, 392, 1134, 566, color=(220,220,220), priority=2, id=8)
 
+# the one on the top
 bgr_right_datamenu_outer = DECORATOR(588, 456, 1130, 90, color=(128,128,128), priority=1, id=9)
 bgr_right_datamenu_inner = DECORATOR(580, 448, 1134, 94, color=(220,220,220), priority=2, id=10)
 
@@ -287,10 +451,28 @@ button_framing = [bgr_left_outer, bgr_left_inner, bgr_center_outer, bgr_center_i
 
 # Give me some BUTTONS
 test_btn = BUTTON_PRIMITIVE(380, 100, 20, 100, "TEST BUTTON PLEASE IGNORE", "Button Flavortext Goes Here\nOr here...\n\n\nOr possibly here.", 100, 11, lambda: print("button click noise"))
-test_btn2 = BUTTON_PRIMITIVE(380, 100, 20, 220, "TEST BUTTON 2", "Button Flavortext part two electric boogaloo", 100, 11, lambda: print("button click noise 2"))
-test_btn3 = BUTTON_PRIMITIVE(380, 100, 20, 340, "TEST BUTTON 3", "Button Flavortext 3", 100, 11, lambda: print("button click noise 3"))
-test_btn4 = BUTTON_PRIMITIVE(380, 100, 20, 460, "TEST BUTTON 4", "Button Flavortext 4", 100, 11, lambda: print("button click noise 4"))
-test_btn5 = BUTTON_PRIMITIVE(380, 100, 20, 580, "TEST BUTTON 5", "Button Flavortext 5", 100, 11, lambda: print("button click noise 5"))
-test_btn6 = BUTTON_PRIMITIVE(380, 100, 20, 700, "TEST BUTTON 6", "Button Flavortext 6", 100, 11, lambda: print("button click noise 6"))
+test_btn2 = BUTTON_PRIMITIVE(380, 100, 20, 220, "TEST BUTTON 2", "Button Flavortext part two electric boogaloo", 100, 12, lambda: print("button click noise 2"))
+test_btn3 = BUTTON_PRIMITIVE(380, 100, 20, 340, "TEST BUTTON 3", "Button Flavortext 3", 100, 13, lambda: print("button click noise 3"))
+test_btn4 = BUTTON_PRIMITIVE(380, 100, 20, 460, "TEST BUTTON 4", "Button Flavortext 4", 100, 14, lambda: print("button click noise 4"))
+test_btn5 = BUTTON_PRIMITIVE(380, 100, 20, 580, "TEST BUTTON 5", "Button Flavortext 5", 100, 15, lambda: print("button click noise 5"))
+test_btn6 = BUTTON_PRIMITIVE(380, 100, 20, 700, "TEST BUTTON 6", "Button Flavortext 6", 100, 16, lambda: print("button click noise 6"))
 
 buttons = [test_btn, test_btn2, test_btn3, test_btn4, test_btn5, test_btn6]
+
+# Node Container
+node_container = NODE_CONTAINER()
+node_container.populate_content(["data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5",
+"data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"],
+ ["data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5",
+ "data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"])
+
+ # Extra Tooltips
+menu_tooltip = TOOLTIP(tooltip="Proudly made by the Clueless Idiots listed here...\n\nMatthew R. Jones - 11566414\nPut your names here nerds.")
+datamenu_tooltip = TOOLTIP(tooltip="The data menu. Once you have results for non-node queries, they are\ndumped directly into this. If you hover over node entries returned by\na query, they will also show additional information, if applicable.")
+contextmenu_tooltip = TOOLTIP(tooltip="The context menu. Shows information about what you are looking at.")
+
+menu_hoverobj = HOVER_OBJECT(1708, 60, 10, 10, menu_tooltip)
+datamenu_hoverobj = HOVER_OBJECT(588, 456, 1130, 90, datamenu_tooltip)
+contextmenu_hoverobj = HOVER_OBJECT(588, 400, 1130, 562, contextmenu_tooltip)
+
+tooltips = [menu_hoverobj, datamenu_hoverobj, contextmenu_hoverobj]
