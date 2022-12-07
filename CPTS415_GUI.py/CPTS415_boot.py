@@ -71,7 +71,7 @@ def ui_poll():
 
 
 if __name__ == "__main__":
-	# Initial system setup.
+	# setup goes here
 	database = Dbase()
 	# Ugly, given that this means GUI is a controller of the database calls (normally we would want to seperate these planes entirely)
 	# but the tradeoff is that people can directly program call-response functionality from Arango through the GUI, which means they don't
@@ -89,4 +89,4 @@ if __name__ == "__main__":
 		pygame.display.flip()
 
 	pygame.quit()
-	#setup.teardown()
+	#teardown goes here

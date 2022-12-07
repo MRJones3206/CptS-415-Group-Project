@@ -13,6 +13,7 @@
 
 # Also serves as repository for the GUI class - the actual data object that contains the GUI. This is puppeted by the _boot loop.
 import pygame
+from CPTS415_dbase import *
 
 # UID control for GUI Objects. Very crappily designed (deletion runs in O(N)) but since the GUI should never have more than about 150
 # objects, and all deletions will usually ocurr from the front to the back of the queue, it will usually be fairly irrelevant.
@@ -22,53 +23,9 @@ def request_id():
 	ID_COUNTER += 1
 	return ID_COUNTER
 
-
 # Default function value - does nothing.
 def just_pass():
 	pass
-
-# Container for GUI elements. Responsible for determining hover and click successes and updating/drawing itself (flip is called in the
-# _boot loop.)
-class GUI:
-	# Default GUI constructor. Builds a GUI out of the elements provided in _gui_elements 
-	def __init__(self, display, database):
-		self.display = display
-		self.draw_queue = []
-		self.draw_queue_markdirty = False
-		self.hover_queue = []
-		self.hover_queue_markdirty = False
-		self.database = database
-
-		# Display Building Goes Here...
-
-		# Drawables
-		self.draw_queue.append(bkg)
-		self.draw_queue += title_bar
-		self.draw_queue += button_framing
-		self.draw_queue += buttons
-		self.draw_queue.append(node_container)
-
-		# Hoverables
-		self.hover_queue += buttons
-		self.hover_queue.append(node_container)
-		self.hover_queue += tooltips
-
-	def draw(self):
-		if self.draw_queue_markdirty:
-			self.draw_queue.sort(key = lambda x: x[0])
-			self.draw_queue_markdirty = False
-		for item in self.draw_queue:
-			item.draw(self.display)
-
-	def hover(self):
-		if self.hover_queue_markdirty:
-			self.hover_queue.sort(key = lambda x: x[0])
-			self.hover_queue_markdirty = False
-		for item in self.hover_queue:
-			if item.mouse_is_in():
-				item.on_hover(self.display)
-			else:
-				item.on_un_hover(self.display)
 
 # A basic decorator object. Used mostly for window dressing.
 class DECORATOR:
@@ -227,7 +184,7 @@ class FONT_OBJECT:
 # what would otherwise be initialization behavior is hardcoded.
 class BUTTON_PRIMITIVE:
 	def __init__(self, x_size = 100, y_size = 100, x_pos = 0, y_pos = 0, buttontext="bingbong",
-				 button_flavortext = "Some Flavortext Please!", priority = 100, id = 0, on_click_override = just_pass):
+				 button_flavortext = "Some Flavortext Please!", priority = 100, id = 0, on_click_override = just_pass, gui=None):
 		# Build the shell of the buttons.
 		self.btn_state_unselected = pygame.Surface((x_size, y_size))
 		self.btn_state_unselected.fill((128,128,128))
@@ -256,6 +213,7 @@ class BUTTON_PRIMITIVE:
 		self.id = id
 		self.priority = priority
 		self.tooltip = TOOLTIP(tooltip=button_flavortext)
+		self.gui = gui
 
 		self.click_override = on_click_override
 		
@@ -423,56 +381,105 @@ class NODE_CONTAINER:
 # FONT OBJECT (self, x_pos = 0, y_pos = 0, bkgcolor = (0, 0, 0), color = (255, 0, 0), priority = 1, fontname = None, fontsize = 16, textstring = "no text here", no_parse = False):
 # INTERACTABLE (self, x_size = 100, y_size = 100, x_pos = 0, y_pos = 0, color = (255, 255, 255), priority = 0, on_hover = just_pass, on_click = just_pass, on_un_hover = just_pass):
 
-# Make a basic background (1728 x 972)
-bkg = BACKGROUND()
-# Title Bar Box Elements
-t_bar_outer = DECORATOR(1708, 60, 10, 10, color=(128,128,128), priority=1, id=0)
-t_bar_inner = DECORATOR(1700, 52, 14, 14, color=(220,220,220), priority=2, id=1)
-t_bar_title = FONT_OBJECT(32, 32, (220,220,220), (0,0,0), 3, None, 32, "Welcome to the Clueless Idiots' Graphical User Interface", False, id=2)
-title_bar = [t_bar_outer, t_bar_inner, t_bar_title]
+# Container for GUI elements. Responsible for determining hover and click successes and updating/drawing itself (flip is called in the
+# _boot loop.)
+class GUI:
+	# Default GUI constructor. Builds a GUI out of the elements provided in _gui_elements 
+	def __init__(self, display, database):
+		self.display = display
+		self.draw_queue = []
+		self.draw_queue_markdirty = False
+		self.hover_queue = []
+		self.hover_queue_markdirty = False
+		self.database = database
 
-# Remember - screen size is (1728 x 972)
-# Button Framings
-bgr_left_outer = DECORATOR(400, 872, 10, 90, color=(128,128,128), priority=1, id=3)
-bgr_left_inner = DECORATOR(392, 864, 14, 94, color=(220,220,220), priority=2, id=4)
+		# Display Building Goes Here...
+		# Make a basic background (1728 x 972)
+		bkg = BACKGROUND()
+		# Title Bar Box Elements
+		t_bar_outer = DECORATOR(1708, 60, 10, 10, color=(128,128,128), priority=1, id=0)
+		t_bar_inner = DECORATOR(1700, 52, 14, 14, color=(220,220,220), priority=2, id=1)
+		t_bar_title = FONT_OBJECT(32, 32, (220,220,220), (0,0,0), 3, None, 32, "Welcome to the Clueless Idiots' Graphical User Interface", False, id=2)
+		title_bar = [t_bar_outer, t_bar_inner, t_bar_title]
 
-bgr_center_outer = DECORATOR(700, 872, 420, 90, color=(128,128,128), priority=1, id=5)
-bgr_center_inner = DECORATOR(692, 864, 424, 94, color=(220,220,220), priority=2, id=6)
+		# Remember - screen size is (1728 x 972)
+		# Button Framings
+		bgr_left_outer = DECORATOR(400, 872, 10, 90, color=(128,128,128), priority=1, id=3)
+		bgr_left_inner = DECORATOR(392, 864, 14, 94, color=(220,220,220), priority=2, id=4)
 
-# the one on the bottom
-bgr_right_contextmenu_outer = DECORATOR(588, 400, 1130, 562, color=(128,128,128), priority=1, id=7)
-bgr_right_contextmenu_inner = DECORATOR(580, 392, 1134, 566, color=(220,220,220), priority=2, id=8)
+		bgr_center_outer = DECORATOR(700, 872, 420, 90, color=(128,128,128), priority=1, id=5)
+		bgr_center_inner = DECORATOR(692, 864, 424, 94, color=(220,220,220), priority=2, id=6)
 
-# the one on the top
-bgr_right_datamenu_outer = DECORATOR(588, 456, 1130, 90, color=(128,128,128), priority=1, id=9)
-bgr_right_datamenu_inner = DECORATOR(580, 448, 1134, 94, color=(220,220,220), priority=2, id=10)
+		# the one on the bottom
+		bgr_right_contextmenu_outer = DECORATOR(588, 400, 1130, 562, color=(128,128,128), priority=1, id=7)
+		bgr_right_contextmenu_inner = DECORATOR(580, 392, 1134, 566, color=(220,220,220), priority=2, id=8)
 
-button_framing = [bgr_left_outer, bgr_left_inner, bgr_center_outer, bgr_center_inner, bgr_right_contextmenu_outer, bgr_right_contextmenu_inner, bgr_right_datamenu_outer, bgr_right_datamenu_inner]
+		# the one on the top
+		bgr_right_datamenu_outer = DECORATOR(588, 456, 1130, 90, color=(128,128,128), priority=1, id=9)
+		bgr_right_datamenu_inner = DECORATOR(580, 448, 1134, 94, color=(220,220,220), priority=2, id=10)
 
-# Give me some BUTTONS
-test_btn = BUTTON_PRIMITIVE(380, 100, 20, 100, "TEST BUTTON PLEASE IGNORE", "Button Flavortext Goes Here\nOr here...\n\n\nOr possibly here.", 100, 11, lambda: print("button click noise"))
-test_btn2 = BUTTON_PRIMITIVE(380, 100, 20, 220, "TEST BUTTON 2", "Button Flavortext part two electric boogaloo", 100, 12, lambda: print("button click noise 2"))
-test_btn3 = BUTTON_PRIMITIVE(380, 100, 20, 340, "TEST BUTTON 3", "Button Flavortext 3", 100, 13, lambda: print("button click noise 3"))
-test_btn4 = BUTTON_PRIMITIVE(380, 100, 20, 460, "TEST BUTTON 4", "Button Flavortext 4", 100, 14, lambda: print("button click noise 4"))
-test_btn5 = BUTTON_PRIMITIVE(380, 100, 20, 580, "TEST BUTTON 5", "Button Flavortext 5", 100, 15, lambda: print("button click noise 5"))
-test_btn6 = BUTTON_PRIMITIVE(380, 100, 20, 700, "TEST BUTTON 6", "Button Flavortext 6", 100, 16, lambda: print("button click noise 6"))
+		button_framing = [bgr_left_outer, bgr_left_inner, bgr_center_outer, bgr_center_inner, bgr_right_contextmenu_outer, bgr_right_contextmenu_inner, bgr_right_datamenu_outer, bgr_right_datamenu_inner]
 
-buttons = [test_btn, test_btn2, test_btn3, test_btn4, test_btn5, test_btn6]
+		# Declaration of button functions here.
+		def trigger_nodelist_update():
+			dlist_1 = ["data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"]
+			dlist_2 = ["data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5","data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"]
+			self.update_node_container(dlist_1, dlist_2)
+		
+		# Give me some BUTTONS
+		test_btn = BUTTON_PRIMITIVE(380, 100, 20, 100, "TEST BUTTON PLEASE IGNORE", "Button Flavortext Goes Here\nOr here...\n\n\nOr possibly here.", 100, 11, lambda: print("button click noise"), gui=self)
+		test_btn2 = BUTTON_PRIMITIVE(380, 100, 20, 220, "TEST BUTTON 2", "Button Flavortext part two electric boogaloo", 100, 12, lambda: print("button click noise 2"), gui=self)
+		test_btn3 = BUTTON_PRIMITIVE(380, 100, 20, 340, "TEST BUTTON 3", "Button Flavortext 3", 100, 13, lambda: print("button click noise 3"),gui=self)
+		test_btn4 = BUTTON_PRIMITIVE(380, 100, 20, 460, "TEST BUTTON 4", "Button Flavortext 4", 100, 14, lambda: print("button click noise 4"),gui=self)
+		test_btn5 = BUTTON_PRIMITIVE(380, 100, 20, 580, "TEST BUTTON 5", "Button Flavortext 5", 100, 15, lambda: print("button click noise 5"),gui=self)
+		test_btn6 = BUTTON_PRIMITIVE(380, 100, 20, 700, "TEST BUTTON 6", "Button Flavortext 6", 100, 16, trigger_nodelist_update,gui=self)
 
-# Node Container
-node_container = NODE_CONTAINER()
-node_container.populate_content(["data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5",
-"data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"],
- ["data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5",
- "data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"])
+		buttons = [test_btn, test_btn2, test_btn3, test_btn4, test_btn5, test_btn6]
 
- # Extra Tooltips
-menu_tooltip = TOOLTIP(tooltip="Proudly made by the Clueless Idiots listed here...\n\nMatthew R. Jones - 11566414\nPut your names here nerds.")
-datamenu_tooltip = TOOLTIP(tooltip="The data menu. Once you have results for non-node queries, they are\ndumped directly into this. If you hover over node entries returned by\na query, they will also show additional information, if applicable.")
-contextmenu_tooltip = TOOLTIP(tooltip="The context menu. Shows information about what you are looking at.")
+		# Node Container
+		node_container = NODE_CONTAINER()
+		self.node_container = node_container
 
-menu_hoverobj = HOVER_OBJECT(1708, 60, 10, 10, menu_tooltip)
-datamenu_hoverobj = HOVER_OBJECT(588, 456, 1130, 90, datamenu_tooltip)
-contextmenu_hoverobj = HOVER_OBJECT(588, 400, 1130, 562, contextmenu_tooltip)
+		# Extra Tooltips
+		menu_tooltip = TOOLTIP(tooltip="Proudly made by the Clueless Idiots listed here...\n\nMatthew R. Jones - 11566414\nPut your names here nerds.")
+		datamenu_tooltip = TOOLTIP(tooltip="The data menu. Once you have results for non-node queries, they are\ndumped directly into this. If you hover over node entries returned by\na query, they will also show additional information, if applicable.")
+		contextmenu_tooltip = TOOLTIP(tooltip="The context menu. Shows information about what you are looking at.")
 
-tooltips = [menu_hoverobj, datamenu_hoverobj, contextmenu_hoverobj]
+		menu_hoverobj = HOVER_OBJECT(1708, 60, 10, 10, menu_tooltip)
+		datamenu_hoverobj = HOVER_OBJECT(588, 456, 1130, 90, datamenu_tooltip)
+		contextmenu_hoverobj = HOVER_OBJECT(588, 400, 1130, 562, contextmenu_tooltip)
+
+		tooltips = [menu_hoverobj, datamenu_hoverobj, contextmenu_hoverobj]
+		# End of display building
+
+		# Drawables
+		self.draw_queue.append(bkg)
+		self.draw_queue += title_bar
+		self.draw_queue += button_framing
+		self.draw_queue += buttons
+		self.draw_queue.append(self.node_container)
+
+		# Hoverables
+		self.hover_queue += buttons
+		self.hover_queue += tooltips
+		self.hover_queue.append(self.node_container)
+
+	def draw(self):
+		if self.draw_queue_markdirty:
+			self.draw_queue.sort(key = lambda x: x[0])
+			self.draw_queue_markdirty = False
+		for item in self.draw_queue:
+			item.draw(self.display)
+
+	def hover(self):
+		if self.hover_queue_markdirty:
+			self.hover_queue.sort(key = lambda x: x[0])
+			self.hover_queue_markdirty = False
+		for item in self.hover_queue:
+			if item.mouse_is_in():
+				item.on_hover(self.display)
+			else:
+				item.on_un_hover(self.display)
+
+	def update_node_container(self, stringlist, stringlist_summary):
+		self.node_container.populate_content(stringlist, stringlist_summary)

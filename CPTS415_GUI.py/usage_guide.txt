@@ -1,0 +1,70 @@
+Usage Guide for the CPTS415*.py GUI Elements.
+
+Provided in this directory are four files - each file has a specific purpose, and for the most part you
+will not need to modify much, if anything, of any of them to get your code working.
+
+~_boot.py is in charge of handling the initial boot cycle of the GUI, along with setup and teardown for
+the main program. It also handles keybind and human interface capturing. Unless you need specific keybinds
+for your functionality or want to add setup/teardown tasks you will not need to modify this.
+
+~_Dbase.py is where database work should go (such as loading initial files, connecting, etc.)
+It contains one class - Dbase - whose methods should be used to access the database. Dbase is
+accessible to the GUI, and from the GUI can then be accessed directly by any function calls made
+using buttons. Please don't dump database code in the _boot or _guy_elements pages.
+
+~_ui.py is my initial draft of the human interface capturing systems. It is deprecated - all of its
+code is now inside _boot, just because it was simpler to implement.
+
+~_gui_elements.py is where everything GUI-related is stored. In addition to the GUI class - the instantiable
+GUI instance that is shown on screen and you interact with - it also has a bunch of the object classes used
+to build gui elements, along with some example filler elements to show how the screen should behave and populate.
+
+--- Implementing Algorithm Calls ---
+
+Function executions should be triggered by clicking a button that has implemented a custom 'on_click' function.
+This function should be declared as part of the init of the GUI, and its internals are declared however you
+need to generate the database call in question - for instance, if you have a query string 'query', you might
+have a function 'do_query' in the GUI init that accepts no arguments, and does something like...
+
+data = self.database.query(query)
+formatted_summaries, formatted_data = my_code.my_format_layout(data)
+self.update_node_container(formatted_summaries, formatted_data)
+
+See lines ~429-435 in _gui_elements.py to see button definition examples, as well as as an example of an implemented
+function call.
+
+--- Implementing Data Displays ---
+
+Data is shown to the screen by using the GUI class' NODE_CONTAINER object. This object has a method, popluate_content, which
+can be accessed in the GUI by calling 'update_node_container'. Updates will delete previously stored information. Please update
+the node container through the GUI, for consistency.
+
+update_node_container expects two iterable containers of strings of data of equal length. 
+
+The first string, 'stringlist', is a list of strings of node data. What actually goes in here is up to you - you have the entire
+top-left display to use, but the idea was to display all relevant node information returned from the query. There is no line limit
+(i.e. infinite newline chars are fine) but if you cram too much in you WILL overflow the container - I don't have text wrapping built
+in to any of the FONT_OBJECT's used to show font.
+
+The second string, 'stringlist_summary' is a list of strings representing a brief description of the node or returned data. They
+should line up with the strings in stringlist, so stringlist_summary[x] is the summary for stringlist[x]. These summaries can include
+at most three lines (ie. two newline chars).
+
+In both cases (and whenever text is displayed) there is no checks for line overflow - if your line is too long, it will either get
+covered by other elements, or render over them and look ugly.
+
+--- Implementing Your Own GUI Elements ---
+
+You are welcome (and encouraged, if you are interested) to implement your own GUI elements. New element classes should be stored
+in the _gui_elements.py file. If you are instantiating new GUI elements dynamically, use the priority system to handle layering, and
+the 'id' system to associate unique identifiers to GUI elements.
+
+Remember to enqueue your elements and then mark the render and/or hover queue as dirty to ensure that everything is placed in order.
+Some primitives are already built up for you - see HOVER_OBJECT, INTERACTABLE, DECORATOR, and TOOLTIP. If you use multiple primitives
+layered onto one-another to accomplish something, make sure that your code can responsibly manage them if they have to be deleted.
+
+It is sometimes OK to have composites call their own DISPLAY.blit() operations outside of the normal display queue for on_hover operations.
+(See any time I use a TOOLTIP as an example). Save the object to the composite element - don't re-create it every time on_hover is called.
+
+For any object that needs to support clicking or hovering functionality, it should first support some kind of mouse_is_in() check to its
+collision. How this executes is up to you - see my primitives and NODE_CONTAINER for possible examples.
