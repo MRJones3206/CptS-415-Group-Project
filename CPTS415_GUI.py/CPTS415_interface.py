@@ -94,7 +94,8 @@ def search_top(count, category, filterSign, value):
 	db = client.db("test", username="root", password="123")
 
 	#Create the query based on passed arguments and execute it
-	query = 'FOR doc IN videos FILTER doc.' + category + ' ' + filterSign + ' @value RETURN doc'
+	query = 'FOR doc IN videos FILTER doc.' + category + ' ' + filterSign + ' @value LIMIT ' + str(count) + ' RETURN doc'
+	#query = 'FOR doc IN videos FILTER doc.' + category + ' ' + filterSign + ' @value RETURN doc'
 	cursor = db.aql.execute(query, bind_vars={'value': value})
 
 	#turn the retrieved data into the iterable list
