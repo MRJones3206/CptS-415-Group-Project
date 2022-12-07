@@ -44,9 +44,9 @@ class GUI:
 		self.draw_queue.append(bkg)
 		self.draw_queue += title_bar
 		self.draw_queue += button_framing
-		self.draw_queue.append(test_btn)
+		self.draw_queue += buttons
 
-		self.hover_queue.append(test_btn)
+		self.hover_queue += buttons
 
 	def draw(self):
 		if self.draw_queue_markdirty:
@@ -61,9 +61,9 @@ class GUI:
 			self.hover_queue_markdirty = False
 		for item in self.hover_queue:
 			if item.mouse_is_in():
-				item.on_hover()
+				item.on_hover(self.display)
 			else:
-				item.on_un_hover()
+				item.on_un_hover(self.display)
 
 # A basic decorator object. Used mostly for window dressing.
 class DECORATOR:
@@ -111,10 +111,10 @@ class INTERACTABLE:
 	def on_click(self):
 		self.on_click_def
 
-	def on_hover(self):
+	def on_hover(self, target):
 		self.on_hover_def
 
-	def on_un_hover(self):
+	def on_un_hover(self, target):
 		self.on_un_hover_def
 
 	def mouse_is_in(self):
@@ -185,7 +185,8 @@ class FONT_OBJECT:
 # to make your own custom GUI stuff), but you are welcome to steal them and declare your own class. Since they are custom made, a lot of
 # what would otherwise be initialization behavior is hardcoded.
 class BUTTON_PRIMITIVE:
-	def __init__(self, x_size = 100, y_size = 100, x_pos = 0, y_pos = 0, buttontext="bingbong", priority = 100, id = 0):
+	def __init__(self, x_size = 100, y_size = 100, x_pos = 0, y_pos = 0, buttontext="bingbong",
+				 button_flavortext = "Some Flavortext Please!", priority = 100, id = 0, on_click_override = just_pass):
 		# Build the shell of the buttons.
 		self.btn_state_unselected = pygame.Surface((x_size, y_size))
 		self.btn_state_unselected.fill((128,128,128))
@@ -196,11 +197,13 @@ class BUTTON_PRIMITIVE:
 		self.btn_state_selected = pygame.Surface((x_size, y_size))
 		self.btn_state_selected.fill((128,128,128))
 		selected_inner = pygame.Surface((x_size - 8, y_size - 8))
-		selected_inner.fill((200, 255, 200))
+		selected_inner.fill((200, 200, 200))
 		self.btn_state_selected.blit(selected_inner, (4, 4))
+
 		# Just reuse the FONT_OBJECT init and steal the surface it generates.
 		font_obj_unselected = FONT_OBJECT(0,0, (220,220,220), (0,0,0), 101, None, 24, buttontext, False, id)
-		font_obj_selected = FONT_OBJECT(0,0, (200,255,200), (0,0,0), 101, None, 24, buttontext, False, id)
+		font_obj_selected = FONT_OBJECT(0,0, (200,200,200), (0,0,0), 101, None, 24, buttontext, False, id)
+
 		self.btn_state_unselected.blit(font_obj_unselected.renderobj, (4 + (x_size - font_obj_unselected.renderobj.get_rect()[2])/2, 4 + (y_size - font_obj_unselected.renderobj.get_rect()[3])/2))
 		self.btn_state_selected.blit(font_obj_selected.renderobj, (4 + (x_size - font_obj_selected.renderobj.get_rect()[2])/2, 4 + (y_size - font_obj_selected.renderobj.get_rect()[3])/2))
 		self.btn_surface = self.btn_state_unselected
@@ -210,16 +213,23 @@ class BUTTON_PRIMITIVE:
 		self.x_pos = x_pos
 		self.y_pos = y_pos
 		self.id = id
+		self.priority = priority
+		self.tooltip = TOOLTIP(tooltip=button_flavortext)
+
+		self.click_override = on_click_override
+		
+
 	def draw(self, target):
 		target.blit(self.btn_surface, (self.x_pos, self.y_pos))
 
 	def on_click(self):
-		print("button click")
+		self.click_override()
 
-	def on_hover(self):
+	def on_hover(self, target):
 		self.btn_surface = self.btn_state_selected
+		self.tooltip.draw(target)
 
-	def on_un_hover(self):
+	def on_un_hover(self, target):
 		self.btn_surface = self.btn_state_unselected
 
 	def mouse_is_in(self):
@@ -227,6 +237,23 @@ class BUTTON_PRIMITIVE:
 		xcheck = self.x_pos <= mousepos[0] and self.x_pos + self.x_size >= mousepos[0]
 		ycheck = self.y_pos <= mousepos[1] and self.y_pos + self.y_size >= mousepos[1]
 		return xcheck and ycheck
+
+# A fancy descriptor. Used to describe various operations when certain objects are hovered over. As with BUTTON_PRIMITIVE, some functionality
+# is built in. No direct need to use ID or priority - the element is drawn only when specified by the implementer, and will be overwritten.
+class TOOLTIP:
+	def __init__(self, bkgcolor = (220, 220, 220), textcolor = (0, 0, 0), tooltip = "Nothing to see here... yet.", priority = -1):
+		self.priority = 100
+		self.id = request_id()
+		# Just steal the surface from a decorator...
+		basestate = DECORATOR(580, 392, 1134, 566, bkgcolor, priority=-1, id=-1)
+		basestate = basestate.surface
+		# And then a FONT_OBJECT.
+		fontstate = FONT_OBJECT(bkgcolor = bkgcolor, color = textcolor, fontname = None, fontsize = 18, textstring = tooltip, no_parse = False, id = -1)
+		basestate.blit(fontstate.renderobj, (4, 4))
+		self.surface = basestate
+	
+	def draw(self, target):
+		target.blit(self.surface, (1134, 566))
 ### Building the GUI ###
 
 
@@ -259,6 +286,11 @@ bgr_right_datamenu_inner = DECORATOR(580, 448, 1134, 94, color=(220,220,220), pr
 button_framing = [bgr_left_outer, bgr_left_inner, bgr_center_outer, bgr_center_inner, bgr_right_contextmenu_outer, bgr_right_contextmenu_inner, bgr_right_datamenu_outer, bgr_right_datamenu_inner]
 
 # Give me some BUTTONS
-test_btn = BUTTON_PRIMITIVE(300, 100, 100, 100, "TEST BUTTON PLEASE IGNORE", 100, 11)
+test_btn = BUTTON_PRIMITIVE(380, 100, 20, 100, "TEST BUTTON PLEASE IGNORE", "Button Flavortext Goes Here\nOr here...\n\n\nOr possibly here.", 100, 11, lambda: print("button click noise"))
+test_btn2 = BUTTON_PRIMITIVE(380, 100, 20, 220, "TEST BUTTON 2", "Button Flavortext part two electric boogaloo", 100, 11, lambda: print("button click noise 2"))
+test_btn3 = BUTTON_PRIMITIVE(380, 100, 20, 340, "TEST BUTTON 3", "Button Flavortext 3", 100, 11, lambda: print("button click noise 3"))
+test_btn4 = BUTTON_PRIMITIVE(380, 100, 20, 460, "TEST BUTTON 4", "Button Flavortext 4", 100, 11, lambda: print("button click noise 4"))
+test_btn5 = BUTTON_PRIMITIVE(380, 100, 20, 580, "TEST BUTTON 5", "Button Flavortext 5", 100, 11, lambda: print("button click noise 5"))
+test_btn6 = BUTTON_PRIMITIVE(380, 100, 20, 700, "TEST BUTTON 6", "Button Flavortext 6", 100, 11, lambda: print("button click noise 6"))
 
-
+buttons = [test_btn, test_btn2, test_btn3, test_btn4, test_btn5, test_btn6]

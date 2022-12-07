@@ -25,13 +25,6 @@ DISPLAY = pygame.display.set_mode((1728, 972))
 
 # Global controller for GUI loop. Set to false to exit GUI drawing and enter teardown.
 RUNNING = True
-# A list of queued operations to execute. Used to delay the execution of halting actions so that the GUI
-# can draw indicators that they are running - there shouldn't ever be more than one object in this at a time, as
-# the queue is executed and flushed each draw cycle.
-OP_QUEUE = []
-# Indicates whether we should spend this cycle handling a queued operation. If so, UI interaction is paused (properly, not evaluated)
-# and the operation is executed.
-OP_QUEUE_FLUSH = False
 
 ### UI hooks and UI control functions. ###
 
@@ -52,13 +45,18 @@ def right():
 	pass
 
 def mouseclick():
-	pass
+	# Find the highest priority object in the hover_queue...
+	iref = None
+	for item in gui.hover_queue:
+		if item.mouse_is_in() and (iref is None or iref.priority < item.priority):
+			iref = item
+	iref.on_click()
 
 KEYBINDS = {pygame.K_ESCAPE: escape, pygame.K_DOWN: down, pygame.K_UP: up, pygame.K_LEFT: left, pygame.K_RIGHT: right}
 
 # Basic UI polling functionality for GUI rendering loops. Allows for the capture of keyboard and mouse events,
 # mouse position detection, and special keyboard characters for GUI escape.
-def ui_poll(gui):
+def ui_poll():
 	for event in pygame.event.get():
 		if event.type == pygame.KEYDOWN:
 			if event.key in KEYBINDS:
@@ -81,14 +79,9 @@ if __name__ == "__main__":
 	gui = GUI(DISPLAY, database)
 
 	while RUNNING:
-		if OP_QUEUE_FLUSH:
-			OP_QUEUE[0]
-			OP_QUEUE_FLUSH = False
-			OP_QUEUE.clear()
-		else:
-			ui_poll(gui)
-			gui.hover()
-			gui.draw()		
+		ui_poll()
+		gui.draw()
+		gui.hover()		
 
 		# Tick our framerate forward one frame (1/120th of a second, by default)
 		CLOCK.tick(120)
