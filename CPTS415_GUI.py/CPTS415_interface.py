@@ -5,11 +5,12 @@ import sys
 
 #Function to create database, and parse the passed file into the database
 def parse_data(file):
+	print("ping")
 	#Initialize the client for ArangoDB.
 	client = ArangoClient(hosts="http://localhost:8529")
 
 	#Connect to the default database as root user.
-	db = client.db("_system", username="root", password="")
+	db = client.db("_system", username="root", password="123")
 
 	#if test database exists, delete it, and create a new one
 	#done for easier testing so you can just keep running script and not worry about duplicate data
@@ -18,7 +19,7 @@ def parse_data(file):
 	db.create_database('test')
 
 	#Now connect to the newly created database
-	db = client.db("test", username="root", password="")
+	db = client.db("test", username="root", password="123")
 
 	#Create the necessary graph for the data.
 	graph = db.create_graph('youtube')
@@ -90,7 +91,7 @@ def search_top(count, category, filterSign, value):
 
 	#Connect to the already created database
 	client = ArangoClient(hosts="http://localhost:8529")
-	db = client.db("test", username="root", password="")
+	db = client.db("test", username="root", password="123")
 
 	#Create the query based on passed arguments and execute it
 	query = 'FOR doc IN videos FILTER doc.' + category + ' ' + filterSign + ' @value RETURN doc'
@@ -103,15 +104,16 @@ def search_top(count, category, filterSign, value):
 	#sort the list based on the specified category
 	lst.sort(key=lambda x: x[category], reverse=True)
 
+	return lst
 	#if there are less entries than specified by count, print that many entries
 	#else print the passed number of entries
 	#example - we want 3 things printed, but the list only has 1 entry, need a check for this.
-	if count > len(lst):
-		for x in lst:
-			print(x[category], x['_key'])
-	else:
-		for x in range(0, count):
-			print(lst[x][category],lst[x]['_key'])
+	#if count > len(lst):
+		#for x in lst:
+			#print(x[category], x['_key'])
+	#else:
+		#for x in range(0, count):
+			#print(lst[x][category],lst[x]['_key'])
 
         
 
@@ -120,7 +122,7 @@ def search_range(category, lowRange, highRange):
 
 	#Connect to the already created database
 	client = ArangoClient(hosts="http://localhost:8529")
-	db = client.db("test", username="root", password="")
+	db = client.db("test", username="root", password="123")
 
 	#Create the query based on passed arguments and execute it
 	query = 'FOR doc IN videos FILTER doc.' + category + ' >= @lowrange AND doc.' + category + ' <= @highrange RETURN doc'
@@ -133,9 +135,10 @@ def search_range(category, lowRange, highRange):
 	#sort the list based on the specified category
 	lst.sort(key=lambda x: x[category], reverse=True)
 
+	return lst
 	#Print the retrieved values matcing the filtered range including the video key
-	for x in lst:
-		print(x[category], x['_key'])
+	#for x in lst:
+		#print(x[category], x['_key'])
 
 
 def main():

@@ -14,6 +14,7 @@
 # Also serves as repository for the GUI class - the actual data object that contains the GUI. This is puppeted by the _boot loop.
 import pygame
 from CPTS415_dbase import *
+from CPTS415_interface import *
 
 # UID control for GUI Objects. Very crappily designed (deletion runs in O(N)) but since the GUI should never have more than about 150
 # objects, and all deletions will usually ocurr from the front to the back of the queue, it will usually be fairly irrelevant.
@@ -425,11 +426,25 @@ class GUI:
 			dlist_1 = ["data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"]
 			dlist_2 = ["data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5","data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"]
 			self.update_node_container(dlist_1, dlist_2)
+
+		def execute_search_top():
+			# Get user inputs here.
+			data = search_top(count = 3, category = 'age', filterSign = '<=', value = 538)
+			# Parse the data here into two lists per usage_guide.txt.
+			# ["data1", "datan..."], ["data1", "datan..."]
+			self.update_node_container([], [])
+
+		def execute_search_range():
+			# Get user inputs here.
+			data = search_range(category = 'age', lowRange = 400, highRange = 500)
+			# Parse the data here into two lists per usage_guide.txt.
+			# ["data1", "datan..."], ["data1", "datan..."]
+			self.update_node_container([], [])
 		
 		# Give me some BUTTONS
 		test_btn = BUTTON_PRIMITIVE(380, 100, 20, 100, "TEST BUTTON PLEASE IGNORE", "Button Flavortext Goes Here\nOr here...\n\n\nOr possibly here.", 100, 11, lambda: print("button click noise"), gui=self)
-		test_btn2 = BUTTON_PRIMITIVE(380, 100, 20, 220, "TEST BUTTON 2", "Button Flavortext part two electric boogaloo", 100, 12, lambda: print("button click noise 2"), gui=self)
-		test_btn3 = BUTTON_PRIMITIVE(380, 100, 20, 340, "TEST BUTTON 3", "Button Flavortext 3", 100, 13, lambda: print("button click noise 3"),gui=self)
+		test_btn2 = BUTTON_PRIMITIVE(380, 100, 20, 220, "Search Top", "Search for top stuff", 100, 12, execute_search_top, gui=self)
+		test_btn3 = BUTTON_PRIMITIVE(380, 100, 20, 340, "Search Range", "search for rangey stuff", 100, 13, execute_search_range,gui=self)
 		test_btn4 = BUTTON_PRIMITIVE(380, 100, 20, 460, "TEST BUTTON 4", "Button Flavortext 4", 100, 14, lambda: print("button click noise 4"),gui=self)
 		test_btn5 = BUTTON_PRIMITIVE(380, 100, 20, 580, "TEST BUTTON 5", "Button Flavortext 5", 100, 15, lambda: print("button click noise 5"),gui=self)
 		test_btn6 = BUTTON_PRIMITIVE(380, 100, 20, 700, "TEST BUTTON 6", "Button Flavortext 6", 100, 16, trigger_nodelist_update,gui=self)
