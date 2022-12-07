@@ -160,14 +160,14 @@ class FONT_OBJECT:
 						ytotal += fontrect[3]
 					linecount -= 1
 				# Enforce strict line count, if specified. Will pass through if linecount is met or unlimited.
-				while linecount > 0:
-					fontobj = self.font.render(' ', True, self.color)
-					renderbases.append((fontobj, ytotal))
-					fontrect = fontobj.get_rect()
-					if fontrect[2] > xmax:
-						xmax = fontrect[2]
-					ytotal += fontrect[3]
-					linecount -= 1
+			while linecount > 0:
+				fontobj = self.font.render(' ', True, self.color)
+				renderbases.append((fontobj, ytotal))
+				fontrect = fontobj.get_rect()
+				if fontrect[2] > xmax:
+					xmax = fontrect[2]
+				ytotal += fontrect[3]
+				linecount -= 1
 			# Build the surface
 			surf = pygame.Surface((xmax, ytotal))
 			surf.fill(bkgcolor)
@@ -432,7 +432,7 @@ class GUI:
 			data = search_top(count = 3, category = 'age', filterSign = '<=', value = 538)
 			# Parse the data here into two lists per usage_guide.txt.
 			# ["data1", "datan..."], ["data1", "datan..."]
-			self.update_node_container([], [])
+			self.update_node_container(["Node Name = Something\nNode ID = Something\nNode fun stuff=Woohoo\nahsgdjasdghasd\nahusdtjuasdasdahsgdfahgsdfahgsfdhgasfdhgafsdhgafsjdfashgdfafkjashdgkjasghdjkasghdjhasgdjkhasgdjkhgasjkhdgasjkddtyfwayhfwhdthyatwfdahsd"], ["Node Name = Something\nNode ID = Something\nNode fun stuff=Woohoo"])
 
 		def execute_search_range():
 			# Get user inputs here.
