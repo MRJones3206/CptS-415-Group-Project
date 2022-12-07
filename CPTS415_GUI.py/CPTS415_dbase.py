@@ -8,7 +8,7 @@ from arango import ArangoClient
 # or initializing tables). 
 # Should also serve as a container for querying setup states and information (such as) if our database is running or not, and contain
 # an appropriate method of tearing itself down.
-class Setup:
+class Dbase:
 	def __init__(self):
 		# Initialize the client for ArangoDB.
 		self.client = ArangoClient(hosts="http://localhost:8529")

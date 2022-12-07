@@ -10,7 +10,7 @@
 # https://www.pygame.org/wiki/GettingStarted  for new users.
 import pygame
 import os
-from CPTS415_setup import Setup
+from CPTS415_dbase import *
 from CPTS415_gui_elements import *
 
 # You have to call this before pygame.init()
@@ -74,8 +74,11 @@ def ui_poll(gui):
 
 if __name__ == "__main__":
 	# Initial system setup.
-	#setup = Setup()
-	gui = GUI(DISPLAY)
+	database = Dbase()
+	# Ugly, given that this means GUI is a controller of the database calls (normally we would want to seperate these planes entirely)
+	# but the tradeoff is that people can directly program call-response functionality from Arango through the GUI, which means they don't
+	# have to touch any of the GUI code directly.
+	gui = GUI(DISPLAY, database)
 
 	while RUNNING:
 		if OP_QUEUE_FLUSH:
@@ -84,6 +87,7 @@ if __name__ == "__main__":
 			OP_QUEUE.clear()
 		else:
 			ui_poll(gui)
+			gui.hover()
 			gui.draw()		
 
 		# Tick our framerate forward one frame (1/120th of a second, by default)
