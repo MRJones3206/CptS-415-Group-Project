@@ -423,23 +423,38 @@ class GUI:
 
 		# Declaration of button functions here.
 		def trigger_nodelist_update():
-			dlist_1 = ["data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"]
-			dlist_2 = ["data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5","data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"]
+			dlist_1 = ["data 1-2", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"]
+			dlist_2 = ["data test\ndsd", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5","data 1", "data 2\nj\nk\nl\nm", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5", "data 1", "data 2", "data 3", "data 4", "data 5"]
 			self.update_node_container(dlist_1, dlist_2)
 
 		def execute_search_top():
 			# Get user inputs here.
-			data = search_top(count = 3, category = 'age', filterSign = '<=', value = 538)
-			# Parse the data here into two lists per usage_guide.txt.
-			# ["data1", "datan..."], ["data1", "datan..."]
-			self.update_node_container(["Node Name = Something\nNode ID = Something\nNode fun stuff=Woohoo\nahsgdjasdghasd\nahusdtjuasdasdahsgdfahgsdfahgsfdhgasfdhgafsdhgafsjdfashgdfafkjashdgkjasghdjkasghdjhasgdjkhasgdjkhgasjkhdgasjkddtyfwayhfwhdthyatwfdahsd"], ["Node Name = Something\nNode ID = Something\nNode fun stuff=Woohoo"])
+			data = search_top(count = 5, category = 'age', filterSign = '<=', value = 400)
+			arrayOne = []
+			arrayTwo = []
+			for x in data:
+				entry = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category']
+				arrayOne.append(entry)
+				entryTwo = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category'] \
+					+ "\nNode Age = " + str(x['age']) + "\nNode Length = " + str(x['length']) + "\nNode Views = " + str(x['views']) \
+					+ "\nNode Rate = " + str(x['rate']) + "\nNode Ratings = " +str(x['ratings']) + "\nNode Comments = " + str(x['comments'])
+				arrayTwo.append(entryTwo)
+				
+			self.update_node_container(arrayTwo, arrayOne)
 
 		def execute_search_range():
 			# Get user inputs here.
 			data = search_range(category = 'age', lowRange = 400, highRange = 500)
-			# Parse the data here into two lists per usage_guide.txt.
-			# ["data1", "datan..."], ["data1", "datan..."]
-			self.update_node_container([], [])
+			arrayOne = []
+			arrayTwo = []
+			for x in data:
+				entry = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category']
+				arrayOne.append(entry)
+				entryTwo = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category'] \
+					+ "\nNode Age = " + str(x['age']) + "\nNode Length = " + str(x['length']) + "\nNode Views = " + str(x['views']) \
+					+ "\nNode Rate = " + str(x['rate']) + "\nNode Ratings = " +str(x['ratings']) + "\nNode Comments = " + str(x['comments'])
+				arrayTwo.append(entryTwo)
+			self.update_node_container(arrayTwo, arrayOne)
 		
 		# Give me some BUTTONS
 		test_btn = BUTTON_PRIMITIVE(380, 100, 20, 100, "TEST BUTTON PLEASE IGNORE", "Button Flavortext Goes Here\nOr here...\n\n\nOr possibly here.", 100, 11, lambda: print("button click noise"), gui=self)
