@@ -116,7 +116,7 @@ def search_top(count, category, filterSign, value):
 		#for x in range(0, count):
 			#print(lst[x][category],lst[x]['_key'])
 
-        
+
 
 #Function that performs range version of search
 def search_range(category, lowRange, highRange):
@@ -141,7 +141,29 @@ def search_range(category, lowRange, highRange):
 	#for x in lst:
 		#print(x[category], x['_key'])
 
+def pagerank():
+	client = ArangoClient(hosts="http://localhost:8529")
+	db = client.db('test', username='root', password="123")
 
+	pregel = db.pregel
+
+	job_id = db.pregel.create_job(
+		graph='youtube',
+		algorithm='pagerank',
+		store=False,
+		max_gss=100,
+		thread_count=1,
+		async_mode=False,
+		result_field='result',
+		algorithm_params={'threshold': 0.000001}
+	)
+
+	# Retrieve details of a Pregel job by ID.
+	job = pregel.job(job_id)
+	
+	return pregel.jobs()
+	# Delete a Pregel job by ID.
+	# pregel.delete_job(job_id)
 def main():
 	#If no argument was specified, print the error to the user.
 	if len(sys.argv) <= 1: print("Needed argument is 'parse' or 'search'.")
@@ -168,7 +190,7 @@ def main():
 				file = open(sys.argv[2], "r")
 				parse_data(file)
 			#Otherwise print the error
-			except: print("Please provide a valid file.")
+			except Exception as e: print(e)
 	
 	#If first argument is invalid, let the user know wht arguments are supported
 	else: print("Invalid first argument. Supported arguments are 'parse' and 'search'.")

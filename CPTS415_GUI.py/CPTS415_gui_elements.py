@@ -456,11 +456,26 @@ class GUI:
 				arrayTwo.append(entryTwo)
 			self.update_node_container(arrayTwo, arrayOne)
 		
+		def execute_pagerank():
+			# Get user inputs here.
+			data = pagerank()
+			print(data)
+			arrayOne = []
+			arrayTwo = []
+			# for x in data:
+			# 	entry = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category']
+			# 	arrayOne.append(entry)
+			# 	entryTwo = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category'] \
+			# 		+ "\nNode Age = " + str(x['age']) + "\nNode Length = " + str(x['length']) + "\nNode Views = " + str(x['views']) \
+			# 		+ "\nNode Rate = " + str(x['rate']) + "\nNode Ratings = " +str(x['ratings']) + "\nNode Comments = " + str(x['comments'])
+			# 	arrayTwo.append(entryTwo)
+			self.update_node_container(arrayTwo, arrayOne)
+		
 		# Give me some BUTTONS
 		test_btn = BUTTON_PRIMITIVE(380, 100, 20, 100, "TEST BUTTON PLEASE IGNORE", "Button Flavortext Goes Here\nOr here...\n\n\nOr possibly here.", 100, 11, lambda: print("button click noise"), gui=self)
 		test_btn2 = BUTTON_PRIMITIVE(380, 100, 20, 220, "Search Top", "Search for top stuff", 100, 12, execute_search_top, gui=self)
 		test_btn3 = BUTTON_PRIMITIVE(380, 100, 20, 340, "Search Range", "search for rangey stuff", 100, 13, execute_search_range,gui=self)
-		test_btn4 = BUTTON_PRIMITIVE(380, 100, 20, 460, "TEST BUTTON 4", "Button Flavortext 4", 100, 14, lambda: print("button click noise 4"),gui=self)
+		test_btn4 = BUTTON_PRIMITIVE(380, 100, 20, 460, "PageRank", "Execute a pagerank job", 100, 14, execute_pagerank,gui=self)
 		test_btn5 = BUTTON_PRIMITIVE(380, 100, 20, 580, "TEST BUTTON 5", "Button Flavortext 5", 100, 15, lambda: print("button click noise 5"),gui=self)
 		test_btn6 = BUTTON_PRIMITIVE(380, 100, 20, 700, "TEST BUTTON 6", "Button Flavortext 6", 100, 16, trigger_nodelist_update,gui=self)
 
