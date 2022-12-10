@@ -444,7 +444,7 @@ class GUI:
 
 		def execute_search_range():
 			# Get user inputs here.
-			data = search_range(category = 'age', lowRange = 400, highRange = 500)
+			data = search_range(category = 'age', lowRange = 500, highRange = 600)
 			arrayOne = []
 			arrayTwo = []
 			for x in data:
@@ -455,13 +455,18 @@ class GUI:
 					+ "\nNode Rate = " + str(x['rate']) + "\nNode Ratings = " +str(x['ratings']) + "\nNode Comments = " + str(x['comments'])
 				arrayTwo.append(entryTwo)
 			self.update_node_container(arrayTwo, arrayOne)
+
+		def execute_get_stats():
+			data = get_stats()
+			resultList = [(key, value) for key, value in data.items()]
+			self.update_node_container([str(x[1]) for x in resultList], list(data))
 		
 		# Give me some BUTTONS
 		test_btn = BUTTON_PRIMITIVE(380, 100, 20, 100, "TEST BUTTON PLEASE IGNORE", "Button Flavortext Goes Here\nOr here...\n\n\nOr possibly here.", 100, 11, lambda: print("button click noise"), gui=self)
 		test_btn2 = BUTTON_PRIMITIVE(380, 100, 20, 220, "Search Top", "Search for top stuff", 100, 12, execute_search_top, gui=self)
 		test_btn3 = BUTTON_PRIMITIVE(380, 100, 20, 340, "Search Range", "search for rangey stuff", 100, 13, execute_search_range,gui=self)
 		test_btn4 = BUTTON_PRIMITIVE(380, 100, 20, 460, "TEST BUTTON 4", "Button Flavortext 4", 100, 14, lambda: print("button click noise 4"),gui=self)
-		test_btn5 = BUTTON_PRIMITIVE(380, 100, 20, 580, "TEST BUTTON 5", "Button Flavortext 5", 100, 15, lambda: print("button click noise 5"),gui=self)
+		test_btn5 = BUTTON_PRIMITIVE(380, 100, 20, 580, "Get Statistics", "Button Flavortext 5", 100, 15, execute_get_stats,gui=self)
 		test_btn6 = BUTTON_PRIMITIVE(380, 100, 20, 700, "TEST BUTTON 6", "Button Flavortext 6", 100, 16, trigger_nodelist_update,gui=self)
 
 		buttons = [test_btn, test_btn2, test_btn3, test_btn4, test_btn5, test_btn6]
