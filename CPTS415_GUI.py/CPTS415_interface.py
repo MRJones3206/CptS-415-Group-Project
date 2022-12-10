@@ -66,7 +66,8 @@ def parse_data(file):
 				"views": int(line[5]),
 				"rate": float(line[6]),
 				"ratings": int(line[7]),
-				"comments": int(line[8])
+				"comments": int(line[8]),
+				"edges": int(len(line) - 9)
 				})
 				numberOfNodes += 1
 
@@ -79,6 +80,9 @@ def parse_data(file):
 					edges.insert({"_from": "videos/" + line[0] , "_to": "relatedVideos/" + line[related]})
 					numberOfEdges += 1
 					degree += 1
+
+				#video['edges'] = degree
+				
 			
 			else:
 				videos.insert({"_key": line[0],
@@ -89,7 +93,8 @@ def parse_data(file):
 				"views": int(line[7]),
 				"rate": float(line[8]),
 				"ratings": int(line[9]),
-				"comments": int(line[10])
+				"comments": int(line[10]),
+				"edges": int(len(line) - 11)
 				})
 				numberOfNodes += 1
 
@@ -110,7 +115,9 @@ def parse_data(file):
 	averageDegree = round(numberOfEdges / numberOfNodes, 2)
 	graphDensity = round(numberOfEdges / (numberOfNodes * 20), 2)
 
-	graphData = {"Node Count":numberOfNodes, "Edge Count":numberOfEdges, 
+	totalNodes = numberOfNodes + numberOfEdges
+
+	graphData = {"Initial Node Count":numberOfNodes, "Edge Count":numberOfEdges, "Total Number Of Nodes": totalNodes,
 	"Max Degree":maxDegree, "Min Degree":lowDegree, "Average Degree":averageDegree, "Graph Density": graphDensity}
 	
 	#Save the data trelated to the graph
