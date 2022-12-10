@@ -2,10 +2,22 @@
 
 from arango import ArangoClient
 import sys
+import json
+
+#Load in the data related to the graph
+def get_stats():
+	with open('data.json', 'r', encoding='utf-8') as f:
+		data = json.load(f)
+	return data
 
 #Function to create database, and parse the passed file into the database
 def parse_data(file):
-	print("ping")
+
+	numberOfNodes = 0
+	numberOfEdges = 0
+	maxDegree = 0
+	lowDegree = 20
+
 	#Initialize the client for ArangoDB.
 	client = ArangoClient(hosts="http://localhost:8529")
 
@@ -39,7 +51,7 @@ def parse_data(file):
 	for line in file:
 		#Traverse each line of the passed file
 		line = line.split()
-
+		degree = 0
 		#If the ID is unique and data is in valid format, insert it.
 		if len(line) > 3 and not videos.has(line[0]):
 			#Reason for this check and two sections for insertion is because some entries have category such as
@@ -56,14 +68,17 @@ def parse_data(file):
 				"ratings": int(line[7]),
 				"comments": int(line[8])
 				})
+				numberOfNodes += 1
 
-					#Traverse each related video for a line
+				#Traverse each related video for a line
 				for related in range (9, len(line)):
 					#If the ID is unique, insert it.
 					if not relatedVideos.has(line[related]):
 						relatedVideos.insert({'_key':line[related]})
 					#Create the edge between main video, and current related video    
 					edges.insert({"_from": "videos/" + line[0] , "_to": "relatedVideos/" + line[related]})
+					numberOfEdges += 1
+					degree += 1
 			
 			else:
 				videos.insert({"_key": line[0],
@@ -76,6 +91,7 @@ def parse_data(file):
 				"ratings": int(line[9]),
 				"comments": int(line[10])
 				})
+				numberOfNodes += 1
 
 				#Traverse each related video for a line
 				for related in range (11, len(line)):
@@ -84,6 +100,24 @@ def parse_data(file):
 						relatedVideos.insert({'_key':line[related]})
 					#Create the edge between main video, and current related video    
 					edges.insert({"_from": "videos/" + line[0] , "_to": "relatedVideos/" + line[related]})
+					numberOfEdges += 1
+					degree += 1
+		
+		#Get the max and low degree for the graph
+		if degree > maxDegree: maxDegree = degree
+		if degree < lowDegree: lowDegree = degree
+
+	averageDegree = round(numberOfEdges / numberOfNodes, 2)
+	graphDensity = round(numberOfEdges / (numberOfNodes * 20), 2)
+
+	graphData = {"Node Count":numberOfNodes, "Edge Count":numberOfEdges, 
+	"Max Degree":maxDegree, "Min Degree":lowDegree, "Average Degree":averageDegree, "Graph Density": graphDensity}
+	
+	#Save the data trelated to the graph
+	with open('data.json', 'w', encoding='utf-8') as f:
+		json.dump(graphData, f, ensure_ascii=False, indent=4)
+
+	return 0
 
 
 #Function that performs top version of search
@@ -95,7 +129,6 @@ def search_top(count, category, filterSign, value):
 
 	#Create the query based on passed arguments and execute it
 	query = 'FOR doc IN videos FILTER doc.' + category + ' ' + filterSign + ' @value LIMIT ' + str(count) + ' RETURN doc'
-	#query = 'FOR doc IN videos FILTER doc.' + category + ' ' + filterSign + ' @value RETURN doc'
 	cursor = db.aql.execute(query, bind_vars={'value': value})
 
 	#turn the retrieved data into the iterable list
@@ -106,16 +139,6 @@ def search_top(count, category, filterSign, value):
 	lst.sort(key=lambda x: x[category], reverse=True)
 
 	return lst
-	#if there are less entries than specified by count, print that many entries
-	#else print the passed number of entries
-	#example - we want 3 things printed, but the list only has 1 entry, need a check for this.
-	#if count > len(lst):
-		#for x in lst:
-			#print(x[category], x['_key'])
-	#else:
-		#for x in range(0, count):
-			#print(lst[x][category],lst[x]['_key'])
-
 
 
 #Function that performs range version of search
@@ -137,9 +160,6 @@ def search_range(category, lowRange, highRange):
 	lst.sort(key=lambda x: x[category], reverse=True)
 
 	return lst
-	#Print the retrieved values matcing the filtered range including the video key
-	#for x in lst:
-		#print(x[category], x['_key'])
 
 def pagerank():
 	client = ArangoClient(hosts="http://localhost:8529")
@@ -165,6 +185,10 @@ def pagerank():
 	# Delete a Pregel job by ID.
 	# pregel.delete_job(job_id)
 def main():
+	
+	global numberOfNodes
+	global numberOfEdges
+
 	#If no argument was specified, print the error to the user.
 	if len(sys.argv) <= 1: print("Needed argument is 'parse' or 'search'.")
 
@@ -192,8 +216,9 @@ def main():
 			#Otherwise print the error
 			except Exception as e: print(e)
 	
-	#If first argument is invalid, let the user know wht arguments are supported
-	else: print("Invalid first argument. Supported arguments are 'parse' and 'search'.")
+	#if we want to provide statistics about the database
+	elif sys.argv[1] == "statistics":
+		get_stats()
 	
 if __name__ == "__main__":
     main()
