@@ -106,6 +106,7 @@ class Dbase:
 				print(f"Parse Time (microseconds): {( time.time_ns()- file_parse_time ) / 1000.0} ")
 
 		self.set_graph_meta()
+		self.rank_graph()
 		print("Done.")
 		print(f"Total Time to parse (microseconds): {( time.time_ns()- start_time ) / 1000.0 }")
 

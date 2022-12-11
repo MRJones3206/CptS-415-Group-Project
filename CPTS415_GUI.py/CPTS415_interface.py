@@ -55,13 +55,31 @@ def pagerank(limit):
 	client = ArangoClient(hosts="http://localhost:8529")
 	db = client.db('test', username='root', password="123")
 
-	query = 'FOR doc IN relatedVideos LIMIT '+ limit+''
-	cursor = db.aql.execute(query, bind_vars={"limit": limit})
+	# query = 'FOR doc IN relatedVideos LIMIT '+ str(limit)+' Return doc'
+	# cursor = db.aql.execute(query, bind_vars={"limit": limit})
 	
-	top = cursor.batch()
-	lst = list(top)
+	# top = cursor.batch()
+	# lst = list(top)
 
-	return lst
+	# pregel = db.pregel
+
+	# job_id = db.pregel.create_job(
+	# 	graph='youtube',
+	# 	algorithm='pagerank',
+	# 	store=True,
+	# 	max_gss=100,
+	# 	thread_count=1,
+	# 	async_mode=False,
+	# 	result_field='rank',
+	# 	algorithm_params={'threshold': 0.000001},
+	# 	vertexCollections=['videos', 'relatedVideos'],
+	# 	edgeCollections=['related']
+	# )
+
+	# job = db.pregel.jobs()
+
+	# return job['status']
+	return
 def main():
 	
 	global numberOfNodes
