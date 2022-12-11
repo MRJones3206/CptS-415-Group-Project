@@ -10,116 +10,6 @@ def get_stats():
 		data = json.load(f)
 	return data
 
-#Function to create database, and parse the passed file into the database
-def parse_data(file):
-
-	numberOfNodes = 0
-	numberOfEdges = 0
-	maxDegree = 0
-	lowDegree = 20
-
-	#Initialize the client for ArangoDB.
-	client = ArangoClient(hosts="http://localhost:8529")
-
-	#Connect to the default database as root user.
-	db = client.db("_system", username="root", password="123")
-
-	#if test database exists, delete it, and create a new one
-	#done for easier testing so you can just keep running script and not worry about duplicate data
-	if db.has_database('test'):
-		db.delete_database('test')
-	db.create_database('test')
-
-	#Now connect to the newly created database
-	db = client.db("test", username="root", password="123")
-
-	#Create the necessary graph for the data.
-	graph = db.create_graph('youtube')
-
-	#Create necessary vertex collections for the data.
-	videos = graph.create_vertex_collection("videos")
-	relatedVideos = graph.create_vertex_collection("relatedVideos")
-
-	#Create an edge definition (relation) for the graph.
-	edges = graph.create_edge_definition(
-		edge_collection="related",
-		from_vertex_collections=["videos"],
-		to_vertex_collections=["relatedVideos"]
-	)
-
-	#Parse the data into the graph
-	for line in file:
-		#Traverse each line of the passed file
-		line = line.split()
-		degree = 0
-		#If the ID is unique and data is in valid format, insert it.
-		if len(line) > 3 and not videos.has(line[0]):
-			#Reason for this check and two sections for insertion is because some entries have category such as
-			#People & Blogs, and on split, character '&' would represent line[4] hence not being possible to turn to int
-			#With this check, all categories in that format are handled
-			if line[4] != '&':
-				videos.insert({"_key": line[0],
-				"uploader": line[1],
-				"age": int(line[2]),
-				"category": line[3],
-				"length": int(line[4]),
-				"views": int(line[5]),
-				"rate": float(line[6]),
-				"ratings": int(line[7]),
-				"comments": int(line[8])
-				})
-				numberOfNodes += 1
-
-				#Traverse each related video for a line
-				for related in range (9, len(line)):
-					#If the ID is unique, insert it.
-					if not relatedVideos.has(line[related]):
-						relatedVideos.insert({'_key':line[related]})
-					#Create the edge between main video, and current related video    
-					edges.insert({"_from": "videos/" + line[0] , "_to": "relatedVideos/" + line[related]})
-					numberOfEdges += 1
-					degree += 1
-			
-			else:
-				videos.insert({"_key": line[0],
-				"uploader": line[1],
-				"age": int(line[2]),
-				"category": line[3] + " " + line[4] + " " + line[5],
-				"length": int(line[6]),
-				"views": int(line[7]),
-				"rate": float(line[8]),
-				"ratings": int(line[9]),
-				"comments": int(line[10])
-				})
-				numberOfNodes += 1
-
-				#Traverse each related video for a line
-				for related in range (11, len(line)):
-					#If the ID is unique, insert it.
-					if not relatedVideos.has(line[related]):
-						relatedVideos.insert({'_key':line[related]})
-					#Create the edge between main video, and current related video    
-					edges.insert({"_from": "videos/" + line[0] , "_to": "relatedVideos/" + line[related]})
-					numberOfEdges += 1
-					degree += 1
-		
-		#Get the max and low degree for the graph
-		if degree > maxDegree: maxDegree = degree
-		if degree < lowDegree: lowDegree = degree
-
-	averageDegree = round(numberOfEdges / numberOfNodes, 2)
-	graphDensity = round(numberOfEdges / (numberOfNodes * 20), 2)
-
-	graphData = {"Node Count":numberOfNodes, "Edge Count":numberOfEdges, 
-	"Max Degree":maxDegree, "Min Degree":lowDegree, "Average Degree":averageDegree, "Graph Density": graphDensity}
-	
-	#Save the data trelated to the graph
-	with open('data.json', 'w', encoding='utf-8') as f:
-		json.dump(graphData, f, ensure_ascii=False, indent=4)
-
-	return 0
-
-
 #Function that performs top version of search
 def search_top(count, category, filterSign, value):
 
@@ -161,29 +51,17 @@ def search_range(category, lowRange, highRange):
 
 	return lst
 
-def pagerank():
+def pagerank(limit):
 	client = ArangoClient(hosts="http://localhost:8529")
 	db = client.db('test', username='root', password="123")
 
-	pregel = db.pregel
-
-	job_id = db.pregel.create_job(
-		graph='youtube',
-		algorithm='pagerank',
-		store=False,
-		max_gss=100,
-		thread_count=1,
-		async_mode=False,
-		result_field='result',
-		algorithm_params={'threshold': 0.000001}
-	)
-
-	# Retrieve details of a Pregel job by ID.
-	job = pregel.job(job_id)
+	query = 'FOR doc IN relatedVideos LIMIT '+ limit+''
+	cursor = db.aql.execute(query, bind_vars={"limit": limit})
 	
-	return pregel.jobs()
-	# Delete a Pregel job by ID.
-	# pregel.delete_job(job_id)
+	top = cursor.batch()
+	lst = list(top)
+
+	return lst
 def main():
 	
 	global numberOfNodes
@@ -202,19 +80,6 @@ def main():
 		elif sys.argv[2] == "range": search_range('length', 400, 500)
 		#If second argument is not valid, let the user know
 		else: print("Unrecognized search argument, please use 'top' or 'range' as the search argument.")
-			
-
-	#If the first argument is parse, parse in the necessary data, second argument is needed which is a file to parse
-	elif sys.argv[1] == "parse":
-		#If less or more arguments than needed, print the instruction.
-		if len(sys.argv) <= 2 or len(sys.argv) > 3: print("Use the parse argument with one additional argument - name of the file to parse.")
-		else:
-			#Try opening the file if it exists
-			try: 
-				file = open(sys.argv[2], "r")
-				parse_data(file)
-			#Otherwise print the error
-			except Exception as e: print(e)
 	
 	#if we want to provide statistics about the database
 	elif sys.argv[1] == "statistics":

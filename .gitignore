@@ -8,6 +8,7 @@ __pycache__/
 *.so
 
 YoutubeAnalyzerData
+*data.json
 # Distribution / packaging
 .Python
 build/

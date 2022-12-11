@@ -12,6 +12,7 @@ import pygame
 import os
 from CPTS415_dbase import *
 from CPTS415_gui_elements import *
+import sys
 
 # You have to call this before pygame.init()
 os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -71,8 +72,20 @@ def ui_poll():
 
 
 if __name__ == "__main__":
-	# setup goes here
-	database = Dbase()
+
+	if len(sys.argv) <= 1: print("Needed argument is 'truncate' or 'delete' or 'create' for database mode.")
+	if sys.argv[1] == 'create' or sys.argv[1] == 'truncate':
+		if len(sys.argv) <= 2: 
+			print("Number of files to ingest are required.")
+			print("python CPTS415_boot.py <Truncat|Create> <Number of files to ingest>")
+			exit()
+
+	if sys.argv[1] == 'create' or sys.argv[1] == 'truncate':
+		database = Dbase(delete_mode=sys.argv[1], population_path_count=sys.argv[2])
+	else:
+		database = Dbase(delete_mode=sys.argv[1])
+
+	
 	# Ugly, given that this means GUI is a controller of the database calls (normally we would want to seperate these planes entirely)
 	# but the tradeoff is that people can directly program call-response functionality from Arango through the GUI, which means they don't
 	# have to touch any of the GUI code directly.

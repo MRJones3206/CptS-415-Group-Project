@@ -463,10 +463,18 @@ class GUI:
 		
 		def execute_pagerank():
 			# Get user inputs here.
-			data = pagerank()
-			print(data)
+			data = pagerank(20)
 			arrayOne = []
 			arrayTwo = []
+			
+			# for x in data:
+			# 	arrayOne.append(entry)
+			# 	entry = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category']
+			# 	entryTwo = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category'] \
+			# 		+ "\nNode Age = " + str(x['age']) + "\nNode Length = " + str(x['length']) + "\nNode Views = " + str(x['views']) \
+			# 		+ "\nNode Rate = " + str(x['rate']) + "\nNode Ratings = " +str(x['ratings']) + "\nNode Comments = " + str(x['comments'])
+			# 	arrayTwo.append(entryTwo)
+			
 			# for x in data:
 			# 	entry = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category']
 			# 	arrayOne.append(entry)
