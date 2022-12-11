@@ -39,7 +39,7 @@ def search_range(category, lowRange, highRange):
 	db = client.db("test", username="root", password="123")
 
 	#Create the query based on passed arguments and execute it
-	query = 'FOR doc IN videos FILTER doc.' + category + ' >= @lowrange AND doc.' + category + ' <= @highrange RETURN doc'
+	query = 'FOR doc IN videos FILTER doc.' + category + ' >= @lowrange AND doc.' + category + ' <= @highrange LIMIT 10  RETURN doc'
 	cursor = db.aql.execute(query, bind_vars={'lowrange': lowRange,'highrange': highRange})
 
 	#turn the retrieved data into the iterable list
@@ -51,35 +51,18 @@ def search_range(category, lowRange, highRange):
 
 	return lst
 
-def pagerank(limit):
+def pagerank():
 	client = ArangoClient(hosts="http://localhost:8529")
 	db = client.db('test', username='root', password="123")
 
-	# query = 'FOR doc IN relatedVideos LIMIT '+ str(limit)+' Return doc'
-	# cursor = db.aql.execute(query, bind_vars={"limit": limit})
+	query = "FOR rv in relatedVideos FOR v in videos FILTER rv._key == v._key SORT rv.rank DESC LIMIT 10 RETURN {key: rv._key, uploader: v.uploader, rank: rv.rank, views: v.views, ratings: v.ratings, category: v.category, length: v.length, comments: v.comments}"
+	cursor = db.aql.execute(query)
 	
-	# top = cursor.batch()
-	# lst = list(top)
+	top = cursor.batch()
+	lst = list(top)
 
-	# pregel = db.pregel
-
-	# job_id = db.pregel.create_job(
-	# 	graph='youtube',
-	# 	algorithm='pagerank',
-	# 	store=True,
-	# 	max_gss=100,
-	# 	thread_count=1,
-	# 	async_mode=False,
-	# 	result_field='rank',
-	# 	algorithm_params={'threshold': 0.000001},
-	# 	vertexCollections=['videos', 'relatedVideos'],
-	# 	edgeCollections=['related']
-	# )
-
-	# job = db.pregel.jobs()
-
-	# return job['status']
-	return
+	return lst
+	
 def main():
 	
 	global numberOfNodes

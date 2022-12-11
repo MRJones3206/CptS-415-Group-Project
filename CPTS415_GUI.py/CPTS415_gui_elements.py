@@ -463,36 +463,28 @@ class GUI:
 		
 		def execute_pagerank():
 			# Get user inputs here.
-			data = pagerank(20)
+			data = pagerank()
 			arrayOne = []
 			arrayTwo = []
 			
-			# for x in data:
-			# 	arrayOne.append(entry)
-			# 	entry = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category']
-			# 	entryTwo = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category'] \
-			# 		+ "\nNode Age = " + str(x['age']) + "\nNode Length = " + str(x['length']) + "\nNode Views = " + str(x['views']) \
-			# 		+ "\nNode Rate = " + str(x['rate']) + "\nNode Ratings = " +str(x['ratings']) + "\nNode Comments = " + str(x['comments'])
-			# 	arrayTwo.append(entryTwo)
-			
-			# for x in data:
-			# 	entry = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category']
-			# 	arrayOne.append(entry)
-			# 	entryTwo = "Node ID = " + x['_key'] + "\nNode Uploader = " + x['uploader'] + "\nNode Category = " + x['category'] \
-			# 		+ "\nNode Age = " + str(x['age']) + "\nNode Length = " + str(x['length']) + "\nNode Views = " + str(x['views']) \
-			# 		+ "\nNode Rate = " + str(x['rate']) + "\nNode Ratings = " +str(x['ratings']) + "\nNode Comments = " + str(x['comments'])
-			# 	arrayTwo.append(entryTwo)
+			for x in data:
+				entry = "Video ID = " + x['key']
+				entryTwo = "Video Rank = " + str(x['rank']) +"\nVideo Uploader = "+ str(x['uploader']) + "\nVideo rating" + str(x['ratings']) +\
+					"\nVideo views"+str(x['views']) + "\nVideo category"+str(x['category']) +"\nVideo comments" + str(x['comments']) + "\nVideo length" + str(x['length'])
+				arrayOne.append(entry)
+				arrayTwo.append(entryTwo)
 			self.update_node_container(arrayTwo, arrayOne)
 		
 		# Give me some BUTTONS
-		test_btn = BUTTON_PRIMITIVE(380, 100, 20, 100, "TEST BUTTON PLEASE IGNORE", "Button Flavortext Goes Here\nOr here...\n\n\nOr possibly here.", 100, 11, lambda: print("button click noise"), gui=self)
+		# test_btn = BUTTON_PRIMITIVE(380, 100, 20, 100, "TEST BUTTON PLEASE IGNORE", "Button Flavortext Goes Here\nOr here...\n\n\nOr possibly here.", 100, 11, lambda: print("button click noise"), gui=self)
 		test_btn2 = BUTTON_PRIMITIVE(380, 100, 20, 220, "Search Top", "Search for top stuff", 100, 12, execute_search_top, gui=self)
 		test_btn3 = BUTTON_PRIMITIVE(380, 100, 20, 340, "Search Range", "search for rangey stuff", 100, 13, execute_search_range,gui=self)
 		test_btn4 = BUTTON_PRIMITIVE(380, 100, 20, 460, "PageRank", "Execute a pagerank job", 100, 14, execute_pagerank,gui=self)
 		test_btn5 = BUTTON_PRIMITIVE(380, 100, 20, 580, "Get Statistics", "Button Flavortext 5", 100, 15, execute_get_stats,gui=self)
-		test_btn6 = BUTTON_PRIMITIVE(380, 100, 20, 700, "TEST BUTTON 6", "Button Flavortext 6", 100, 16, trigger_nodelist_update,gui=self)
+		# test_btn6 = BUTTON_PRIMITIVE(380, 100, 20, 700, "TEST BUTTON 6", "Button Flavortext 6", 100, 16, trigger_nodelist_update,gui=self)
 
-		buttons = [test_btn, test_btn2, test_btn3, test_btn4, test_btn5, test_btn6]
+		# buttons = [test_btn, test_btn2, test_btn3, test_btn4, test_btn5, test_btn6]
+		buttons = [test_btn2, test_btn3, test_btn4, test_btn5]
 
 		# Node Container
 		node_container = NODE_CONTAINER()
